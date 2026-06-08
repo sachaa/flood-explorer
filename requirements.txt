@@ -1,0 +1,8 @@
+# Flood Explorer — JRC Global River Flood Hazard Maps
+# Target area: Escobar, Paraguarí, Paraguay
+
+streamlit>=1.28.0
+ee>=0.1.401
+folium>=0.17.0
+streamlit-folium>=0.21.0
+geopandas>=0.14.0
