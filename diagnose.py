@@ -1,10 +1,21 @@
 """Diagnostic: sample JRC flood data at the target coordinates."""
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
 import ee
+
+load_dotenv()
+project = os.getenv("EE_PROJECT", "")
 
 # Reuse your existing credentials
 try:
-    ee.Initialize()
-    print("✅ EE initialized\n")
+    kwargs = {}
+    if project:
+        kwargs["project"] = project
+    ee.Initialize(**kwargs)
+    print(f"✅ EE initialized (project: {project or 'default'})\n")
 except Exception as e:
     print(f"❌ EE init failed: {e}")
     exit(1)
