@@ -122,6 +122,61 @@ ZOOM_START = int(os.getenv("ZOOM_START", "13"))
 
 st.sidebar.header("🎛️ Controls")
 
+# --- Location search ---
+st.sidebar.subheader("🔍 Jump to location")
+
+# Initialize session state for map center
+if "map_lat" not in st.session_state:
+    st.session_state.map_lat = CENTER_LAT
+if "map_lon" not in st.session_state:
+    st.session_state.map_lon = CENTER_LON
+
+place_query = st.sidebar.text_input(
+    "Coordinates or place name",
+    placeholder="e.g. 48.8566, 2.3522 or Paris, France",
+    key="place_search",
+)
+
+if st.sidebar.button("Go", key="go_btn") and place_query:
+    # Try parsing as lat,lon first
+    parts = [p.strip() for p in place_query.split(",")]
+    if len(parts) == 2:
+        try:
+            lat = float(parts[0])
+            lon = float(parts[1])
+            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                st.session_state.map_lat = lat
+                st.session_state.map_lon = lon
+                st.rerun()
+        except ValueError:
+            pass
+
+    # Fallback: geocode as place name
+    import urllib.parse, urllib.request, json as _json
+    try:
+        encoded = urllib.parse.quote(place_query)
+        url = (
+            "https://nominatim.openstreetmap.org/search"
+            f"?q={encoded}&format=json&limit=1"
+        )
+        req = urllib.request.Request(url, headers={"User-Agent": "flood-explorer/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            results = _json.loads(resp.read())
+        if results:
+            st.session_state.map_lat = float(results[0]["lat"])
+            st.session_state.map_lon = float(results[0]["lon"])
+            st.rerun()
+        else:
+            st.sidebar.error("Place not found")
+    except Exception:
+        st.sidebar.error("Geocoding failed — try lat,lon instead")
+
+st.sidebar.caption(
+    f"📍 {st.session_state.map_lat:.4f}, {st.session_state.map_lon:.4f}"
+)
+
+st.sidebar.divider()
+
 selected_label = st.sidebar.selectbox(
     "Return period",
     list(RETURN_PERIODS.keys()),
@@ -187,7 +242,7 @@ def get_flood_image_for_point(band: str, lat: float, lon: float) -> float | None
 tile_url = get_flood_tile_url(selected_band)
 
 m = folium.Map(
-    location=[CENTER_LAT, CENTER_LON],
+    location=[st.session_state.map_lat, st.session_state.map_lon],
     zoom_start=ZOOM_START,
     tiles="OpenStreetMap",
     control_scale=True,
@@ -216,8 +271,8 @@ folium.LayerControl().add_to(m)
 
 # Marker at center
 folium.Marker(
-    location=[CENTER_LAT, CENTER_LON],
-    popup="📍 Target parcel (Escobar, Paraguarí)",
+    location=[st.session_state.map_lat, st.session_state.map_lon],
+    popup=f"📍 {st.session_state.map_lat:.4f}, {st.session_state.map_lon:.4f}",
     icon=folium.Icon(color="red", icon="info-sign"),
 ).add_to(m)
 
@@ -225,8 +280,7 @@ folium.Marker(
 
 st.subheader(f"🗺️ {selected_label} — Flood Depth Map")
 st.caption(
-    f"Center: {CENTER_LAT:.4f}, {CENTER_LON:.4f} | "
-    f"Department: Paraguarí | District: Escobar, Paraguay"
+    f"Center: {st.session_state.map_lat:.4f}, {st.session_state.map_lon:.4f}"
 )
 st.caption(
     "💡 Transparent areas = no modelled flood risk. "
