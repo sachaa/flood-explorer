@@ -228,6 +228,12 @@ st.caption(
     f"Center: {CENTER_LAT:.4f}, {CENTER_LON:.4f} | "
     f"Department: Paraguarí | District: Escobar, Paraguay"
 )
+st.caption(
+    "💡 Transparent areas = no modelled flood risk. "
+    "Blue areas = flood depth in meters. "
+    "This model only covers river floodplains — your parcel may be on high ground. "
+    "Click the map to sample any point."
+)
 
 map_output = st_folium(
     m,
@@ -259,6 +265,11 @@ if clicked and clicked.get("lat") and clicked.get("lng"):
         )
         st.caption(f"Sampled at: {click_lat:.6f}, {click_lon:.6f}")
     else:
-        st.warning("No data at this location — try moving to a nearby area with river coverage.")
+        st.success(
+            f"✅ No modelled flood risk at this location. "
+            f"The JRC model predicts no river flooding here at any return period "
+            f"(the point is outside the mapped river floodplain). "
+            f"This is the best-case result — but still verify with local flood history."
+        )
 else:
     st.info("Click anywhere on the map above to get the flood depth at that point.")
