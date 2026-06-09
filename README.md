@@ -71,7 +71,18 @@ You need a Google Earth Engine account. Two options:
 2. On first run, the app will open a browser window for OAuth
 3. Follow the prompts — credentials are cached to `~/.config/earthengine/`
 
-### 5. Run the app
+### 5. Configure your project ID
+
+Copy `.env.example` to `.env` and set your GCP project ID:
+
+```bash
+cp .env.example .env
+# Edit .env — replace "festive-project-123456" with your actual project ID
+```
+
+Skip this if you're using the default project associated with your account.
+
+### 6. Run the app
 
 ```bash
 streamlit run app.py

@@ -15,12 +15,18 @@ import json
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 import ee
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
 
-# ── Page config ──────────────────────────────────────────────────────────────
+# ── Load .env ─────────────────────────────────────────────────────────────────
+
+load_dotenv()
+
+# ── Page config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
     page_title="Flood Explorer — Escobar, Paraguay",
@@ -39,6 +45,7 @@ st.caption(
 
 def init_ee():
     """Initialize Earth Engine. Tries service account first, then OAuth."""
+    project = os.getenv("EE_PROJECT", "")
     svc_account_path = Path("ee-service-account.json")
     if svc_account_path.exists():
         with open(svc_account_path) as f:
@@ -46,13 +53,19 @@ def init_ee():
         credentials = ee.ServiceAccountCredentials(
             creds["client_email"], str(svc_account_path)
         )
-        ee.Initialize(credentials)
+        kwargs = {"credentials": credentials}
+        if project:
+            kwargs["project"] = project
+        ee.Initialize(**kwargs)
         st.sidebar.success("✅ Authenticated via service account")
         return True
 
     # Fallback to OAuth
     try:
-        ee.Initialize()
+        kwargs = {}
+        if project:
+            kwargs["project"] = project
+        ee.Initialize(**kwargs)
         st.sidebar.success("✅ Authenticated via stored OAuth credentials")
         return True
     except Exception:
@@ -61,7 +74,10 @@ def init_ee():
         )
         if st.sidebar.button("Authenticate with Google Earth Engine"):
             ee.Authenticate()
-            ee.Initialize()
+            kwargs = {}
+            if project:
+                kwargs["project"] = project
+            ee.Initialize(**kwargs)
             st.sidebar.success("✅ Authenticated! Reload the page.")
             st.rerun()
         st.stop()
