@@ -37,7 +37,6 @@ st.caption(
 
 # ── Initialize Earth Engine ─────────────────────────────────────────────────
 
-@st.cache_resource
 def init_ee():
     """Initialize Earth Engine. Tries service account first, then OAuth."""
     svc_account_path = Path("ee-service-account.json")
