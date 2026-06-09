@@ -86,15 +86,16 @@ init_ee()
 
 # ── Dataset ──────────────────────────────────────────────────────────────────
 
-JRC_DATASET = "JRC/CEMS_GLOFAS_FloodHazard_v2_1"
+JRC_DATASET = "JRC/CEMS_GLOFAS/FloodHazard/v2_1"
 
 RETURN_PERIODS = {
-    "10-year flood (10%)":   "flood_depth_10",
-    "20-year flood (5%)":    "flood_depth_20",
-    "50-year flood (2%)":    "flood_depth_50",
-    "100-year flood (1%)":   "flood_depth_100",
-    "200-year flood (0.5%)": "flood_depth_200",
-    "500-year flood (0.2%)": "flood_depth_500",
+    "10-year flood (10%)":   "RP10_depth",
+    "20-year flood (5%)":    "RP20_depth",
+    "50-year flood (2%)":    "RP50_depth",
+    "75-year flood (1.3%)":  "RP75_depth",
+    "100-year flood (1%)":   "RP100_depth",
+    "200-year flood (0.5%)": "RP200_depth",
+    "500-year flood (0.2%)": "RP500_depth",
 }
 
 # Styling bands — blue palette from shallow to deep
@@ -124,7 +125,7 @@ st.sidebar.header("🎛️ Controls")
 selected_label = st.sidebar.selectbox(
     "Return period",
     list(RETURN_PERIODS.keys()),
-    index=3,  # default: 100-year
+    index=4,  # default: 100-year
 )
 selected_band = RETURN_PERIODS[selected_label]
 
@@ -155,7 +156,8 @@ A 100-year flood does *not* mean "once per century"
 @st.cache_data
 def get_flood_tile_url(band: str) -> str:
     """Get a MapID token for the selected band (cached, expires ~24h)."""
-    image = ee.Image(f"{JRC_DATASET}/{band}").visualize(**FLOOD_VIZ)
+    col = ee.ImageCollection(JRC_DATASET)
+    image = col.first().select(band).visualize(**FLOOD_VIZ)
     map_id = image.getMapId()
     return map_id["tile_fetcher"].url_format
 
@@ -163,7 +165,8 @@ def get_flood_tile_url(band: str) -> str:
 @st.cache_data
 def get_flood_image_for_point(band: str, lat: float, lon: float) -> float | None:
     """Sample flood depth at a specific point. Returns depth in meters."""
-    image = ee.Image(f"{JRC_DATASET}/{band}")
+    col = ee.ImageCollection(JRC_DATASET)
+    image = col.first().select(band)
     point = ee.Geometry.Point(lon, lat)
     try:
         value = (
